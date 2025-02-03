@@ -7,6 +7,9 @@ import { useProductStore } from '../../store/productStore';
 import ProductModal from './ProductModal.vue';
 import ProductUpdateModal from './ProductUpdateModal.vue';
 
+import { FwbModal } from 'flowbite-vue'
+
+
 const productStore = useProductStore()
 const products = ref([])
 const selectedProduct = ref({})
@@ -14,81 +17,96 @@ const selectedProduct = ref({})
 
 const isShowModal = ref(false)
 const isUpdateModal = ref(false)
+const isDetailModal = ref(false)
+
 
 const role = localStorage.getItem('userRole')
-function showModal () {
+const showModal = () =>{
     isShowModal.value = !isShowModal.value
 }
 
-function updateModal (product) {
+const updateModal = (product) => {
     isUpdateModal.value = true
     selectedProduct.value = product
 }
 
-function closeUpdateModal () {
+const closeUpdateModal = () => {
     isUpdateModal.value = false
 }
 
-watchEffect( async() => {
-    if(role === 'Admin'){
+const detailModal = (product) => {
+    isDetailModal.value = !isDetailModal.value
+    selectedProduct.value = product
+}
+
+watch( async() => {
+    //if(role === 'Admin'){
         try {
+            /*
             const token = localStorage.getItem('token')
             if(!token){
                 console.log('Error: No token')
             }
-            const response = await fetch('/api/offices/view', {
+                */
+            const response = await fetch('http://localhost:5000/api/products/view', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
+                    //'Authorization': `Bearer ${token}`,
                 },
             });
 
             if(response.status === 200) {
                 const data = await response.json()
-                products.value = data.data
-                productStore.setStoredOffices(data.data)
+                console.log(data.products)
+                products.value = data.products
             }
             else{
                 const res = await response.json()
                 console.log(res.error)
-                alert(res.message)
+                alert(res.error)
             }
         } catch (err) {
         console.log(err)
         }
-    }else alert("You have no permission")
+    //}else alert("You have no permission")
   })
 
 
-const handleDeleteOffice = async (product) => {
-    if (!window.confirm(`Are you sure you want to delete office: ${product.product_name}?`)) {
+const handleDeleteProduct = async (product) => {
+    if (!window.confirm(`Are you sure you want to delete: ${product.name}?`)) {
         return;
     }
 
+    /*
     const token = localStorage.getItem('token')
     if(!token){
         console.log('Error: No token')
     }
+        */
 
     try {
-        const response = await fetch(`/api/offices/delete/${product.product_id}`, {
+        const response = await fetch(`http://localhost:5000/api/products/delete/${product.id}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
+                //'Authorization': `Bearer ${token}`,
             },
         });
 
         if (response.ok) {
-            toast('Office Deleted Successfully')
+            alert('Product Deleted Successfully')
         } else {
-            toast(`Error: ${response.statusText}`)
+            alert(`Error: ${response.statusText}`)
         }
     } catch (err) {
-        toast('An unexpected error occurred')
+        alert('An unexpected error occurred')
         console.error(err)
     }
+}
+
+const getImageUrl = (imagePath) => {
+  return `http://localhost:5000/${imagePath}`;
 }
 
 watch(()=>{
@@ -100,7 +118,7 @@ watch(()=>{
 
 
 <template>
-    <div>
+    <div class="flex justify-center ">
         <div class="mt-16">
             <div class="p-2">
                 <div class="flex items-center justify-start w-full pb-3 space-x-4">
@@ -136,23 +154,34 @@ watch(()=>{
                         </thead>
                         <tbody>
                             <tr v-for="product in products"
-                                :key="product.product_id"
+                                :key="product.id"
                                 class="hover:bg-gray-50">
-                                <td class="px-4 py-2 border border-gray-300">{{ product.product_name }}</td>
-                                <td class="px-4 py-2 border border-gray-300">{{ product.total_quantity }}</td>
-                                <td class="px-4 py-2 border border-gray-300">{{ product.order_quantity }}</td>
-                                <td class="px-4 py-2 border border-gray-300">{{ product.total_quantity - product.order_quantity }}</td>
+                                <td class="px-4 py-2 border border-gray-300">{{ product.name }}</td>
+                                <td class="px-4 py-2 border border-gray-300">{{ product.quantity }}</td>
+                                <td class="px-4 py-2 border border-gray-300">{{ product.order }}</td>
+                                <td class="px-4 py-2 border border-gray-300">{{ product.quantity - product.order }}</td>
                                 <td class="px-4 py-2 border border-gray-300">{{ product.price}}</td>
-                                <td class="px-4 py-2 border border-gray-300">{{ product.price * product.total_quantity }}</td>
+                                <td class="px-4 py-2 border border-gray-300">{{ product.price * product.quantity }}</td>
                                 <td class="flex justify-center px-4 py-2 space-x-4 border border-gray-300">
                                     <button
+                                        @click="detailModal(product)"
+                                        title="View detail"
+                                        class="text-green-500"
+                                    >
+                                        <font-awesome-icon icon="eye" />
+                                    </button>
+                                    <button
                                         @click="updateModal(product)"
-                                        class="text-blue-500">
+                                        title="Updaate Product"
+                                        class="text-blue-500"
+                                    >
                                         <font-awesome-icon :icon="['fas', 'pen-to-square']" />
                                     </button>
                                     <button
-                                        @click="handleDeleteOffice(product)"
-                                        class="text-red-500">
+                                        @click="handleDeleteProduct(product)"
+                                        title="Delete this product"
+                                        class="text-red-500"
+                                    >
                                         <font-awesome-icon :icon="['fas', 'trash']" />
                                     </button>
                                 </td>
@@ -165,6 +194,33 @@ watch(()=>{
                 </div>
             </div>
         </div>
+
+        <fwb-modal
+            v-if="isDetailModal" @close="detailModal" size="lg"
+            class="fixed inset-x-0 inset-y-0 z-50 flex items-center justify-center pl-56">
+            <template #header>
+                <h2>{{ selectedProduct.name }}</h2>
+            </template>
+            <template #body>
+                <div class="flex justify-between w-full gap-2 px-6 py-2">
+                    <div>
+                        <p> Total Quantity: {{ selectedProduct.quantity }}</p>
+                        <p> Unit Price: {{ selectedProduct.price }}</p>
+                        <p> Total Orders: {{ selectedProduct.order }}</p>
+                    </div>
+                    <div>
+                        <img
+                            :src="getImageUrl(selectedProduct.image)"
+                            alt="image"
+                        />
+                    </div>
+                </div>
+                <div class="px-3 py-2 border-t-2 border-blue-300">
+                    <p>{{ selectedProduct.description }}</p>
+                </div>
+            </template>
+
+        </fwb-modal>
 
 
         <ProductModal

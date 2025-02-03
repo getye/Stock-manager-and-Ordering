@@ -3,11 +3,13 @@ import { defineProps } from 'vue';
 import { FwbModal } from 'flowbite-vue'
 import { ref, onMounted } from 'vue';
 import { z } from 'zod';
+
+import { toast } from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
 defineProps(['isShowModal', 'showModal' ])
 
 
 const newUser = ref({ name: '', email: '', phone: '', role: '', status:"Active" })
-const roles = ref([])
 const errors = ref({})
 
 const userSchema = z.object({
@@ -58,12 +60,16 @@ const handleAddUser = async () => {
                 body: JSON.stringify(newUser.value),
             });
 
-            const res = await response.json()
             if (response.status === 201) {
+                const res = await response.json()
                 alert(res.message)
-                newUser.value = {}
+                newUser.value.name = ''
+                newUser.value.email = ''
+                newUser.value.role = ''
+                newUser.value.phone = ''
             }else{
-                alert(res.message)
+                const res = await response.json()
+                alert(res.error)
                 console.error('Error in registration:', res.error)
             }
         } catch (error) {
@@ -126,13 +132,7 @@ const handleAddUser = async () => {
                         </select>
                     </div>
 
-                    <div class="flex justify-between space-x-4">
-                        <button
-                            @click="showModal"
-                            type="button"
-                            class="px-4 py-1 font-medium text-white bg-red-500 rounded-lg hover:bg-red-600">
-                            Close
-                        </button>
+                    <div class="flex justify-end space-x-4">
                         <button
                             @click="handleAddUser"                            
                             class="px-5 py-1 font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600">
@@ -145,13 +145,3 @@ const handleAddUser = async () => {
 
     </fwb-modal>
 </template>
-
-<style scoped>
-.fade-enter-active, .fade-leave-active {
-    transition: opacity 0.5s;
-}
-.fade-enter-from, .fade-leave-to {
-    opacity: 0;
-}
-</style>
-

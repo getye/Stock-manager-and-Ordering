@@ -4,6 +4,8 @@ import { onMounted, ref, watch, watchEffect } from 'vue'
 import UserModal from './UserModal.vue';
 import UserUpdateModal from './UserUpdateModal.vue';
 import { useUserStore } from '../../store/userStore';
+import { toast } from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
 
 const userStore = useUserStore()
 const isShowModal = ref(false)
@@ -28,7 +30,7 @@ function closeUpdateModal () {
 
 
 onMounted( async() => {
-    if(role === 'Admin'){
+    //if(role === 'Admin'){
         try {
             /*
             const token = localStorage.getItem('token')
@@ -53,7 +55,7 @@ onMounted( async() => {
         } catch (err) {
             console.log(err)
         }
-    }else alert("You have no permission")
+    //}else toast("You have no permission")
   });
 
 

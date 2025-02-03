@@ -1,5 +1,5 @@
 <script setup>
-import { defineProps, watchEffect } from 'vue';
+import { defineProps, watch, watchEffect } from 'vue';
 import { FwbModal } from 'flowbite-vue'
 import { ref, reactive, onMounted } from 'vue';
 import { toast } from 'vue3-toastify';
@@ -10,45 +10,62 @@ defineProps(['isShowModal', 'showModal' ])
 
 const open = ref(false);
 const productData = reactive({
-    product_name: '',
+    name: '',
     quantity: '',
     price: '',
+    image: null,
     description: '',
-});
+})
 
 
 const handleSubmit = async () => {
     try {
-        const token = localStorage.getItem('token')
-        if(!token){
-            console.log('Error: No token')
-        }
+        
+        const product = new FormData()
+        product.append("name", productData.name)
+        product.append("description", productData.description)
+        product.append("quantity", productData.quantity)
+        product.append("price", productData.price)
+        product.append("image", productData.image)
 
-        const response = await fetch('/api/offices/add', {
+        const response = await fetch('http://localhost:5000/api/products/add', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify(productData),
+            body: product,
         });
 
         if (response.status === 201) {
-            toast('Successfully registered')
-            productData.product_name = ''
+            const res = await response.json()
+            alert(res.message)
+            
+            productData.name = ''
             productData.price = ''
             productData.quantity = ''
+            productData.description =''
+            productData.image = null
         } else {
             const res = await response.json()
             console.log(res.error)
-            toast('Error in registration')
+            alert('Error in registration')
 
         }
     } catch (error) {
         alert('An unexpected error occurred')
         console.error(error.message)
     }
-};
+}
+
+const triggerImageUpload = () => {
+    document.querySelector("input[type='file']").click()
+}
+
+const uploadImage = (event) => {
+    const file = event.target.files[0]
+    if (file) {
+        productData.image = file
+    }
+}
+
+
 
 </script>
 
@@ -62,11 +79,11 @@ const handleSubmit = async () => {
         </template>
         <template #body>
             <div class="w-full space-y-1 ">
-                <form @submit.prevent="handleSubmit">
+                <div>
                     <div class="space-y-4">
                         <div>
                             <input
-                                v-model="productData.product_name"
+                                v-model="productData.name"
                                 type="text"
                                 placeholder="Product name"
                                 class="w-full px-6 py-2 border-2 border-blue-100 rounded-2xl"
@@ -76,7 +93,7 @@ const handleSubmit = async () => {
                         <div>
                             <input
                                 v-model="productData.quantity"
-                                type="text"
+                                type="number"
                                 placeholder="Total Quantity"
                                 class="w-full px-6 py-2 border-2 border-blue-100 rounded-2xl"
                             />
@@ -84,49 +101,41 @@ const handleSubmit = async () => {
                         <div>
                             <input
                                 v-model="productData.price"
-                                type="text"
+                                type="number"
                                 placeholder="Unit Price"
                                 class="w-full px-6 py-2 border-2 border-blue-100 rounded-2xl"
                             />
                         </div>
 
                         <div>
-                            <QuillEditor
-                                theme="snow"
-                                v-model="productData.description "
-                                contentType="html"
+                            <textarea
+                                v-model="productData.description"
                                 placeholder="Description ..."
-                                class="w-full p-2 bg-white" />
+                                class="w-full px-6 border-2 border-blue-100 rounded-2xl" />
+                        </div>
+
+                        <div>
+                            <button @click="triggerImageUpload"
+                                class="w-full p-2 mb-2 font-bold text-white bg-gradient-to-r from-blue-400 to-gray-500 rounded-2xl">
+                                <font-awesome-icon :icon="['fas', 'upload']" class="pr-2" />
+                                {{ productData.image ? productData.image.name : "Product Image" }}
+                            </button>
+                            <input type="file" name="image" accept="image/*" @change="uploadImage" class="hidden" />
                         </div>
                     </div>
 
-                    <div class="flex justify-between pt-3 space-x-4">
+                    <div class="flex justify-end pt-3 space-x-4">
                         <button
-                            @click="showModal"
-                            type="button"
-                            class="px-4 py-1 font-medium text-white bg-red-500 rounded-lg hover:bg-red-600"
-                            >
-                            Close
-                        </button>
-                        <button
-                            type="submit"
+                            @click="handleSubmit"
                             class="px-5 py-1 font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600">
                             Add
                         </button>
                     </div>
-                </form>
+                </div>
             </div>
         </template>
 
     </fwb-modal>
 </template>
 
-<style scoped>
-.fade-enter-active, .fade-leave-active {
-    transition: opacity 0.5s;
-}
-.fade-enter-from, .fade-leave-to {
-    opacity: 0;
-}
-</style>
 

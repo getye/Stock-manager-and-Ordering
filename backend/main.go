@@ -13,6 +13,7 @@ func main() {
 
 	router := gin.Default()
 	router.Use(cors.Default())
+	router.Static("/uploads", "./uploads")
 
 	routes.SetupUserRoutes(router, db)
 	routes.SetupProductRoutes(router, db)

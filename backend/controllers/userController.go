@@ -21,9 +21,8 @@ func CreateUser(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		if user.ID == uuid.Nil {
-			user.ID = uuid.New()
-		}
+		user.ID = uuid.New()
+		// generate OTP here
 
 		err := models.InsertUser(db, &user)
 		if err != nil {
@@ -31,7 +30,9 @@ func CreateUser(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{
+		// send OTP over user email here
+
+		c.JSON(http.StatusCreated, gin.H{
 			"message": "User created successfully!",
 			"user":    user,
 		})
@@ -45,7 +46,6 @@ func GetUsers(db *gorm.DB) gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-
 		c.JSON(http.StatusOK, gin.H{"users": users})
 	}
 }
@@ -70,7 +70,6 @@ func UpdateUser(db *gorm.DB) gin.HandlerFunc {
 			}
 			return
 		}
-
 		c.JSON(http.StatusOK, user)
 	}
 }
