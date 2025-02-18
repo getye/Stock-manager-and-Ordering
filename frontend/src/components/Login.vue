@@ -7,7 +7,7 @@ const user = ref({
     email: '',
     password: '',
     remember: false,
-});
+})
 
 const isForgotPasswordModal = ref(false)
 
@@ -21,35 +21,32 @@ const forgotPasswordModalClose = () =>{
 
 const handleLogin = async () => {
     try {
-        const response = await fetch('/api/users/login', {
+        const response = await fetch('http://localhost:5000/api/users/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(user),
-        });
+        })
 
-        const responseData = await response.json();
+        const responseData = await response.json()
 
         if (responseData.redirect) {
-            window.location.href = responseData.redirect;
+            window.location.href = responseData.redirect
         }
 
         if (response.ok) {
-            document.cookie = `name=${responseData.user.user_name}; path=/; secure; samesite=strict`
 
-            localStorage.setItem('token', responseData.token)
-            localStorage.setItem('userRole', responseData.user.role.role_name)
-            const permissions = JSON.parse(responseData.user.role.permissions);
-            localStorage.setItem('permissions', permissions);
+            localStorage.setItem('userId', responseData.user.id)
+            localStorage.setItem('userRole', responseData.user.role)
 
         } else {
             console.log(responseData.error)
-            alert('User not found');
+            alert('User not found')
         }
     } catch (error) {
-        alert('An unexpected error occurred');
-        console.error(error);
+        alert('An unexpected error occurred')
+        console.error(error)
     }
 }
 

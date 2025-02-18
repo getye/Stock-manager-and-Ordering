@@ -9,6 +9,7 @@ import (
 
 func SetupUserRoutes(router *gin.Engine, db *gorm.DB) {
 	router.POST("/api/users/add", controllers.CreateUser(db))
+	router.POST("/api/users/login", controllers.Login(db))
 	router.GET("/api/users/view", controllers.GetUsers(db))
 	router.PUT("/api/users/update/:id", controllers.UpdateUser(db))
 	router.PUT("/api/users/update/status/:id", controllers.UpdateUserStatus(db))

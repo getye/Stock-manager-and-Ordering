@@ -3,13 +3,41 @@ package controllers
 import (
 	"backend/models"
 	"fmt"
+	"log"
+	"math/rand"
 	"net/http"
+	"time"
+
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/google/uuid"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
+
+type LoginRequest struct {
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+func generateOtp(length int) string {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	seed := rand.NewSource(time.Now().UnixNano())
+	random := rand.New(seed)
+
+	result := make([]byte, length)
+	for i := range result {
+		result[i] = charset[random.Intn(len(charset))]
+	}
+
+	hashedOtp, err := bcrypt.GenerateFromPassword([]byte(result), bcrypt.DefaultCost)
+	if err != nil {
+		log.Println("Error:", err)
+		return ""
+	}
+	return string(hashedOtp)
+}
 
 func CreateUser(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -22,7 +50,7 @@ func CreateUser(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		user.ID = uuid.New()
-		// generate OTP here
+		user.Password = generateOtp(8)
 
 		err := models.InsertUser(db, &user)
 		if err != nil {
@@ -35,6 +63,45 @@ func CreateUser(db *gorm.DB) gin.HandlerFunc {
 		c.JSON(http.StatusCreated, gin.H{
 			"message": "User created successfully!",
 			"user":    user,
+		})
+	}
+}
+
+func Login(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var loginRequest LoginRequest
+		err := c.ShouldBindJSON(&loginRequest)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+			return
+		}
+
+		var user models.User
+		result := db.Where("email = ?", loginRequest.Email).First(&user)
+		if result.Error != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
+		}
+
+		if user.Password != loginRequest.Password {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+			return
+		}
+
+		var redirect string
+
+		if user.Role == "Admin" {
+			redirect = "/user"
+		} else if user.Role == "Suplier" {
+			redirect = "/product"
+		} else {
+			redirect = "/login"
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"message":  "Login successful",
+			"user":     user,
+			"redirect": redirect,
 		})
 	}
 }
